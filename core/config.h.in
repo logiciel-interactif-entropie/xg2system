@@ -1,0 +1,5 @@
+#define VERSION_STR "@version_major@.@version_minor@.@version_revision@"
+
+#define VERSION_MAJOR @version_major@
+#define VERSION_MINOR @version_minor@
+#define VERSION_REVISION @version_revision@
