@@ -9,5 +9,5 @@ void main() {
     vec4 v_pos = mul(projViewWorld, vec4(a_position, 1.0));
     gl_Position = v_pos;
     v_color0 = a_color0;
-    v_normal = a_normal;
+    v_normal = normalize(mat3(model) * a_normal);
 }

@@ -24,8 +24,16 @@ typedef struct {
   float time;
 } camera_lookat_spin_t;
 
+typedef struct {
+  float speed;
+  float mouse_sensitivity;
+  vec2 angles;
+  vec2 last_mouse;
+} camera_debug_controller_t;
+
 extern ECS_COMPONENT_DECLARE(camera_t);
 extern ECS_COMPONENT_DECLARE(camera_lookat_t);
 extern ECS_COMPONENT_DECLARE(camera_lookat_spin_t);
+extern ECS_COMPONENT_DECLARE(camera_debug_controller_t);
 
 void runtime_register_camera(struct runtime* runtime);

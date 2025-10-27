@@ -5,6 +5,8 @@
 #include "flecs.h"
 #include "flecs/addons/flecs_c.h"
 #include "graphics/camera.h"
+#include "ode/collision_space.h"
+#include "physics.h"
 #include "runtime.h"
 #include "transform.h"
 
@@ -15,7 +17,13 @@ static int debugIndex;
 ECS_TAG_DECLARE(debug_t);
 
 static void __debug_transform3d(ecs_iter_t* it) {
-  transform3d_t* t = ecs_field(it, transform3d_t, 1);
+  transform3d_t* _t = ecs_field(it, transform3d_t, 1);
+  for (int i = 0; i < it->count; i++) {
+    transform3d_t* t = &_t[i];
+    bgfx_dbg_text_printf(0, debugIndex++, COL, "%i: (%0.2f, %0.2f, %0.2f)",
+                         t->translation[0], t->translation[1],
+                         t->translation[2]);
+  }
   // LOG(ll_debug, "%0.2fx%0.2fx%0.2f", t->translation);
 }
 
@@ -44,6 +52,19 @@ static void __debug_camera_lookat_spin(ecs_iter_t* it) {
   }
 }
 
+static void __debug_physics_world(ecs_iter_t* it) {
+  physics_world_t* _physics = ecs_field(it, physics_world_t, 1);
+  for (int i = 0; i < it->count; i++) {
+    physics_world_t* physics = &_physics[i];
+    bgfx_dbg_text_printf(0, debugIndex++, COL, "%i: %i geoms, last delta: %f",
+                         i, dSpaceGetNumGeoms(physics->space),
+                         physics->last_delta);
+    float r = PHYSICS_RATE / physics->last_delta;
+    bgfx_dbg_text_printf(0, debugIndex++, COL,
+                         "%i: physics is running at %3.2f%% speed", r * 100.f);
+  }
+}
+
 static void __debug_reset(ecs_iter_t* it) {
   bgfx_dbg_text_clear(0x00, true);
   debugIndex = 2;
@@ -62,4 +83,6 @@ void runtime_register_debug(struct runtime* runtime) {
              camera_lookat_t);
   ECS_SYSTEM(runtime->ecs, __debug_camera_lookat_spin, EcsPostUpdate, debug_t,
              camera_lookat_spin_t);
+  ECS_SYSTEM(runtime->ecs, __debug_physics_world, EcsPostUpdate, debug_t,
+             physics_world_t);
 }

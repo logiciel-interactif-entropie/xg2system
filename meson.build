@@ -21,6 +21,8 @@ engine_srcs = [
   'engine/transform.h',
   'engine/debug.c',
   'engine/debug.h',
+  'engine/physics.c',
+  'engine/physics.h',
 ]
 
 graphics_srcs = [
@@ -56,11 +58,11 @@ bgfx = dependency('bgfx', required: true)
 cglm = dependency('cglm', required: true)
 glfw = dependency('glfw3', required: true)
 assimp = dependency('assimp', required: true)
-
+ode = dependency('ode', required: true)
 
 cpp = meson.get_compiler('cpp')
 
-engine_deps = [glib, flecs, bgfx, cglm, cpp.find_library('bx'), cpp.find_library('bimg'), glfw, assimp]
+engine_deps = [glib, flecs, bgfx, cglm, cpp.find_library('bx'), cpp.find_library('bimg'), glfw, assimp, ode]
 
 shaderc = find_program('shaderc', required: true)
 

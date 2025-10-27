@@ -5,6 +5,7 @@
 #include <core/log.h>
 #include <core/mem.h>
 #include <signal.h>
+#include <string.h>
 
 #if BX_PLATFORM_LINUX || BX_PLATFORM_BSD
 #define GLFW_EXPOSE_NATIVE_X11
@@ -19,20 +20,21 @@ struct window_private {
 
 static struct window* our_window;
 
-static void __sighandler(int signal) { our_window->quitRequested = true; }
+static void __sighandler(int signal) { our_window->quit_requested = true; }
 
 static void __window_close_handler(GLFWwindow* window) {
   struct window* win_host = (struct window*)glfwGetWindowUserPointer(window);
-  win_host->quitRequested = true;
+  win_host->quit_requested = true;
 }
 
 static void __window_key_event(GLFWwindow* window, int key, int scancode,
                                int action, int mods) {
   struct window* win_host = (struct window*)glfwGetWindowUserPointer(window);
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-    win_host->quitRequested = true;
+    win_host->quit_requested = true;
   else
-    win_host->keys_down[key] = (action == GLFW_PRESS) ? true : false;
+    win_host->keys_down[key] =
+        (action == GLFW_PRESS || action == GLFW_REPEAT) ? true : false;
 }
 
 static void __window_mouse_button_event(GLFWwindow* window, int button,
@@ -53,6 +55,9 @@ struct window* window_create() {
   our_window = window;
   window->private = HEAP_ALLOC_TYPE(struct window_private);
 
+  memset(window->keys_down, 0, sizeof(window->keys_down));
+  memset(window->mouse_buttons_down, 0, sizeof(window->mouse_buttons_down));
+
   glfwInit();
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
   window->private->window = glfwCreateWindow(800, 600, "", NULL, NULL);
@@ -66,7 +71,8 @@ struct window* window_create() {
                              __window_mouse_button_event);
   glfwSetCursorPosCallback(window->private->window, __window_cursor_pos_event);
 
-  window->quitRequested = false;
+  window->quit_requested = false;
+  window->mouse_lock_requested = false;
 
   signal(SIGINT, __sighandler);
 
@@ -91,4 +97,10 @@ void window_destroy(struct window* window) {
   HEAP_FREE(window);
 }
 
-void window_poll(struct window* window) { glfwPollEvents(); }
+void window_poll(struct window* window) {
+  glfwPollEvents();
+  if (window->mouse_lock_requested) {
+    glfwSetInputMode(window->private->window, GLFW_CURSOR,
+                     GLFW_CURSOR_DISABLED);
+  }
+}

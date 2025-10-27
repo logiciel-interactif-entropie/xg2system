@@ -7,7 +7,8 @@ struct window_private;
 
 struct window {
   struct window_private* private;
-  bool quitRequested;
+  bool quit_requested;
+  bool mouse_lock_requested;
 
   vec2 mouse_position;
   bool keys_down[GLFW_KEY_LAST + 1];

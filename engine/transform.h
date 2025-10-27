@@ -7,8 +7,9 @@ struct runtime;
 
 typedef struct {
   vec3 translation;
-  vec4 quat_rotation;
+  mat3 rotation;
   vec3 scale;
+  bool dirty;
 } transform3d_t;
 
 extern ECS_COMPONENT_DECLARE(transform3d_t);

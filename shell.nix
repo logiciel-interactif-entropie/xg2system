@@ -24,7 +24,7 @@ let
   mkEnvironment = pkgs: name: pkgs.llvmPackages_latest.stdenv.mkDerivation {
     name = name;
     nativeBuildInputs = [ pkgs.llvmPackages_latest.clang-tools pkgs.meson pkgs.ninja pkgs.gdb pkgs.cmake pkgs.pkg-config ];
-    buildInputs = [ pkgs.glib pkgs.cglm pkgs.glfw pkgs.libGL pkgs.xorg.libX11 pkgs.xorg.libXrandr pkgs.assimp bgfx ];
+    buildInputs = [ pkgs.glib pkgs.cglm pkgs.glfw pkgs.libGL pkgs.xorg.libX11 pkgs.xorg.libXrandr pkgs.assimp bgfx pkgs.ode ];
   };
 in
 {
