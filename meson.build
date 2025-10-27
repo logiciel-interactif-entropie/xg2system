@@ -83,7 +83,7 @@ gametest_srcs = [
 ]
 
 gen_shaders = []
-gen_shaders += gen_vs.process(['shaders/example.vs'])
+gen_shaders += gen_vs.process(['shaders/example.vs', 'shaders/example_instanced.vs'])
 gen_shaders += gen_fs.process(['shaders/example.fs'])
 
 gametest = shared_module('game', gametest_srcs, gen_shaders, dependencies: engine_dep)

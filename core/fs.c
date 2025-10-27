@@ -41,6 +41,11 @@ void fs_init() {
   system2->uri = "assets";
   struct fs_system* shaders = fs_add_literal_subdir("../shaders");
   shaders->uri = "shaders";
+#else
+  struct fs_system* system2 = fs_add_literal_subdir("assets");
+  system2->uri = "assets";
+  struct fs_system* shaders = fs_add_literal_subdir("shaders");
+  shaders->uri = "shaders";
 #endif
 }
 

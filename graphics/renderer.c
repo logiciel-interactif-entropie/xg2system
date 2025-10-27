@@ -66,7 +66,8 @@ void renderer_runtime_frame(struct renderer *renderer) {
   window_get_resolution(renderer->window, resolution);
 
   if (!glm_ivec2_eqv(resolution, last_resolution)) {
-    bgfx_reset(resolution[0], resolution[1], BGFX_RESET_VSYNC,
+    bgfx_reset(resolution[0], resolution[1],
+               BGFX_RESET_VSYNC | BGFX_RESET_MSAA_X4,
                BGFX_TEXTURE_FORMAT_COUNT);
     glm_ivec2_copy(resolution, last_resolution);
     bgfx_set_view_rect(0, 0, 0, resolution[0], resolution[1]);

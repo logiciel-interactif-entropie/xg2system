@@ -21,6 +21,8 @@
 #include "graphics/shader_program.h"
 
 ECS_COMPONENT_DECLARE(model_t);
+ECS_COMPONENT_DECLARE(model_group_t);
+ECS_COMPONENT_DECLARE(model_instance_t);
 
 enum vertex_layout_id {
   vli_regular_layout,
@@ -65,6 +67,72 @@ static void __initialize_vli(enum vertex_layout_id id) {
       bgfx_create_vertex_layout(&layout->vertex_layout_alloc);
 }
 
+static void __model_group_render(ecs_iter_t* it) {
+  model_group_t* _group = ecs_field(it, model_group_t, 0);
+  shader_t* _shader = ecs_field(it, shader_t, 1);
+  for (int i = 0; i < it->count; i++) {
+    model_group_t* group = &_group[i];
+    shader_t* shader = &_shader[i];
+
+    if (!group->resource) continue;
+    if (!shader->shader) continue;
+
+    struct model_resource* model = resource_get_model(group->resource);
+    if (!model->model_loaded) continue;
+    struct shader_program_resource* shader_resource =
+        resource_get_shader_program(shader->shader);
+    if (!shader_resource->program_loaded) continue;
+
+    ecs_query_t* members = ecs_query(
+        it->world,
+        {.terms = {{ecs_id(model_instance_t)}, {ecs_id(transform3d_t)}}});
+    ecs_iter_t members_it = ecs_query_iter(it->world, members);
+    int num_members = members_it.count;
+
+    bgfx_encoder_t* encoder = bgfx_encoder_begin(false);
+    while (ecs_query_next(&members_it)) {
+      model_instance_t* instance = ecs_field(&members_it, model_instance_t, 0);
+      transform3d_t* transform = ecs_field(&members_it, transform3d_t, 1);
+
+      int num_attached = 0;
+      for (int j = 0; j < members_it.count; j++)
+        if (instance[j].group_id == it->entities[i]) num_attached++;
+      if (num_attached == 0) continue;
+
+      bgfx_instance_data_buffer_t db;
+      int attached_quota =
+          bgfx_get_avail_instance_data_buffer(num_attached, sizeof(mat4));
+      bgfx_alloc_instance_data_buffer(&db, attached_quota, sizeof(mat4));
+      if (attached_quota < num_attached) {
+        LOG(ll_warn,
+            "attached_quota (%i quota, %i wanted) reached, stopping (some "
+            "meshes "
+            "wont render)",
+            attached_quota, num_attached);
+      }
+      mat4* data = (mat4*)db.data;
+      for (int j = 0; j < members_it.count; j++) {
+        if (attached_quota == 0) {
+          j = members_it.count + 1;
+        } else if (instance[j].group_id == it->entities[i]) {
+          transform_mat4(&transform[j], data[j]);
+          attached_quota--;
+        }
+      }
+
+      struct mesh* mesh = g_array_index(model->meshes, struct mesh*, 0);
+      bgfx_encoder_set_vertex_buffer(encoder, 0, mesh->vertex_buffer, 0,
+                                     mesh->num_vertices);
+      bgfx_encoder_set_index_buffer(encoder, mesh->index_buffer, 0,
+                                    mesh->num_indices);
+      bgfx_encoder_set_instance_data_buffer(encoder, &db, 0, num_attached);
+      bgfx_encoder_submit(encoder, 0, shader_resource->program, 0,
+                          BGFX_DISCARD_ALL);
+    }
+    bgfx_encoder_end(encoder);
+  }
+}
+
 static void __model_render(ecs_iter_t* it) {
   model_t* _model = ecs_field(it, model_t, 0);
   transform3d_t* _transform = ecs_field(it, transform3d_t, 1);
@@ -75,40 +143,41 @@ static void __model_render(ecs_iter_t* it) {
                    BGFX_STATE_WRITE_B | BGFX_STATE_WRITE_A |
                    BGFX_STATE_WRITE_Z | BGFX_STATE_DEPTH_TEST_LESS |
                    BGFX_STATE_CULL_CW | BGFX_STATE_MSAA;
-  bgfx_set_state(state, 0);
+  bgfx_encoder_set_state(encoder, state, 0);
+  struct mesh* last_mesh = NULL;
   for (int i = 0; i < it->count; i++) {
     model_t* model = &_model[i];
     transform3d_t* transform = &_transform[i];
     shader_t* shader = &_shader[i];
 
-    if (!model->resource) return;
+    if (!model->resource) continue;
     struct model_resource* model_resource = resource_get_model(model->resource);
-    if (!model_resource->model_loaded) return;
-    if (!shader->shader) return;
+    if (!model_resource->model_loaded) continue;
+    if (!shader->shader) continue;
     struct shader_program_resource* shader_program_resource =
         resource_get_shader_program(shader->shader);
     if (!shader_program_resource->program_loaded) {
       LOG(ll_warn, "Shader resource %s not loaded yet",
           shader->shader->resource_name);
-      return;
+      continue;
     }
 
     mat4 matrix;
     transform_mat4(transform, matrix);
-    bgfx_set_transform(matrix, 1);
+    bgfx_encoder_set_transform(encoder, matrix, 1);
 
     for (int i = 0; i < model_resource->meshes->len; i++) {
       struct mesh* mesh =
           g_array_index(model_resource->meshes, struct mesh*, i);
-      bgfx_set_index_buffer(mesh->index_buffer, 0, mesh->num_indices);
-      bgfx_set_vertex_buffer(0, mesh->vertex_buffer, 0, mesh->num_vertices);
-      bgfx_submit(0, shader_program_resource->program, 0.f,
-                  BGFX_DISCARD_INDEX_BUFFER | BGFX_DISCARD_VERTEX_STREAMS);
+      bgfx_encoder_set_index_buffer(encoder, mesh->index_buffer, 0,
+                                    mesh->num_indices);
+      bgfx_encoder_set_vertex_buffer(encoder, 0, mesh->vertex_buffer, 0,
+                                     mesh->num_vertices);
+      bgfx_encoder_submit(encoder, 0, shader_program_resource->program, 0.f,
+                          BGFX_DISCARD_ALL ^ BGFX_DISCARD_TRANSFORM);
     }
-    bgfx_submit(0, shader_program_resource->program, 0.f,
-                BGFX_DISCARD_TRANSFORM);
+    bgfx_encoder_discard(encoder, BGFX_DISCARD_TRANSFORM);
   }
-  bgfx_discard(BGFX_DISCARD_ALL);
   bgfx_encoder_end(encoder);
 }
 
@@ -116,13 +185,22 @@ static void __model_free(ecs_iter_t* it) {
   model_t* model = ecs_field(it, model_t, 0);
   resource_unref(model->resource);
 }
+static void __model_group_free(ecs_iter_t* it) {
+  model_group_t* model = ecs_field(it, model_group_t, 0);
+  resource_unref(model->resource);
+}
 
 void runtime_register_model(struct runtime* runtime) {
   ECS_COMPONENT_DEFINE(runtime->ecs, model_t);
+  ECS_COMPONENT_DEFINE(runtime->ecs, model_group_t);
+  ECS_COMPONENT_DEFINE(runtime->ecs, model_instance_t);
 
-  ECS_SYSTEM(runtime->ecs, __model_render, EcsOnUpdate, model_t, transform3d_t,
+  ECS_SYSTEM(runtime->ecs, __model_render, EcsPostUpdate, model_t,
+             transform3d_t, shader_t);
+  ECS_SYSTEM(runtime->ecs, __model_group_render, EcsPostUpdate, model_group_t,
              shader_t);
   ECS_OBSERVER(runtime->ecs, __model_free, EcsOnRemove, model_t);
+  ECS_OBSERVER(runtime->ecs, __model_group_free, EcsOnRemove, model_group_t);
 }
 
 static void __mesh_process(const struct aiScene* scene, struct aiMesh* mesh,

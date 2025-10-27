@@ -122,6 +122,11 @@ void resource_destroy(struct resource* resource) {
   g_hash_table_remove(__resource_manager->resource_table,
                       (gpointer)resource->resource_name);
   resource_delete(resource);
+#ifndef NDEBUG
+  if (g_hash_table_size(__resource_manager->resource_table) == 0) {
+    LOG(ll_debug, "AWESOME! all resources deleted");
+  }
+#endif
 }
 
 struct resource* resource_get(const char* resource) {

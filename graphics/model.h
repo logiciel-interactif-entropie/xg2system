@@ -31,7 +31,17 @@ typedef struct {
   struct resource* resource;
 } model_t;
 
+typedef struct {
+  struct resource* resource;
+} model_group_t;
+
+typedef struct {
+  ecs_entity_t group_id;
+} model_instance_t;
+
 extern ECS_COMPONENT_DECLARE(model_t);
+extern ECS_COMPONENT_DECLARE(model_group_t);
+extern ECS_COMPONENT_DECLARE(model_instance_t);
 
 struct runtime;
 void runtime_register_model(struct runtime* runtime);

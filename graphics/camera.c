@@ -56,7 +56,7 @@ static void __camera_set_lookat_spin(ecs_iter_t* it) {
     camera_lookat_spin_t* _spin = &spin[i];
     _lookat->eye[0] = _spin->center[0] + (sinf(_spin->time) * _spin->distance);
     _lookat->eye[1] = _spin->center[1] + (cosf(_spin->time) * _spin->distance);
-    _lookat->eye[2] = _spin->center[2] + (sinf(_spin->time) * _spin->distance);
+    _lookat->eye[2] = _spin->center[2] + _spin->distance;
     glm_vec3_copy(_spin->center, _lookat->target);
     _spin->time += it->delta_system_time;
   }

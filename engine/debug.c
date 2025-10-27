@@ -47,6 +47,9 @@ static void __debug_camera_lookat_spin(ecs_iter_t* it) {
 static void __debug_reset(ecs_iter_t* it) {
   bgfx_dbg_text_clear(0x00, true);
   debugIndex = 2;
+  bgfx_dbg_text_printf(0, debugIndex++, COL, "ECS Dt = %f (%0.2fFPS), SDt = %f",
+                       it->delta_time, 1.0 / it->delta_time,
+                       it->delta_system_time);
 }
 
 void runtime_register_debug(struct runtime* runtime) {
