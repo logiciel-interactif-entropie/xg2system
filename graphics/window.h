@@ -1,5 +1,6 @@
 #pragma once
 
+#include <GLFW/glfw3.h>
 #include <cglm/cglm.h>
 
 struct window_private;
@@ -7,6 +8,10 @@ struct window_private;
 struct window {
   struct window_private* private;
   bool quitRequested;
+
+  vec2 mouse_position;
+  bool keys_down[GLFW_KEY_LAST + 1];
+  bool mouse_buttons_down[GLFW_MOUSE_BUTTON_LAST + 1];
 };
 
 struct window* window_create();

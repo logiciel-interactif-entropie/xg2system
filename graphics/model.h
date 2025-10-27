@@ -7,6 +7,7 @@
 
 struct vertex_layout {
   bool initialized;
+  bgfx_vertex_layout_t vertex_layout_alloc;
   bgfx_vertex_layout_handle_t vertex_layout;
   int references;
 };
@@ -16,14 +17,14 @@ struct mesh {
   bgfx_index_buffer_handle_t index_buffer;
   int num_indices;
   int num_vertices;
+
+  struct vertex_layout* selected_vertex_layout;
 };
 
 struct model_resource {
   GArray* meshes;
 
   bool model_loaded;
-
-  struct vertex_layout* selected_vertex_layout;
 };
 
 typedef struct {

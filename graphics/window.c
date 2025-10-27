@@ -21,6 +21,33 @@ static struct window* our_window;
 
 static void __sighandler(int signal) { our_window->quitRequested = true; }
 
+static void __window_close_handler(GLFWwindow* window) {
+  struct window* win_host = (struct window*)glfwGetWindowUserPointer(window);
+  win_host->quitRequested = true;
+}
+
+static void __window_key_event(GLFWwindow* window, int key, int scancode,
+                               int action, int mods) {
+  struct window* win_host = (struct window*)glfwGetWindowUserPointer(window);
+  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    win_host->quitRequested = true;
+  else
+    win_host->keys_down[key] = (action == GLFW_PRESS) ? true : false;
+}
+
+static void __window_mouse_button_event(GLFWwindow* window, int button,
+                                        int action, int mods) {
+  struct window* win_host = (struct window*)glfwGetWindowUserPointer(window);
+  win_host->mouse_buttons_down[button] = action == GLFW_PRESS ? true : false;
+}
+
+static void __window_cursor_pos_event(GLFWwindow* window, double xpos,
+                                      double ypos) {
+  struct window* win_host = (struct window*)glfwGetWindowUserPointer(window);
+  win_host->mouse_position[0] = xpos;
+  win_host->mouse_position[1] = ypos;
+}
+
 struct window* window_create() {
   struct window* window = HEAP_ALLOC_TYPE(struct window);
   our_window = window;
@@ -31,6 +58,13 @@ struct window* window_create() {
   window->private->window = glfwCreateWindow(800, 600, "", NULL, NULL);
   glfwSetWindowSizeLimits(window->private->window, 800, 600, GLFW_DONT_CARE,
                           GLFW_DONT_CARE);
+  glfwSetWindowUserPointer(window->private->window, window);
+
+  glfwSetWindowCloseCallback(window->private->window, __window_close_handler);
+  glfwSetKeyCallback(window->private->window, __window_key_event);
+  glfwSetMouseButtonCallback(window->private->window,
+                             __window_mouse_button_event);
+  glfwSetCursorPosCallback(window->private->window, __window_cursor_pos_event);
 
   window->quitRequested = false;
 
@@ -52,8 +86,9 @@ void window_get_resolution(struct window* window, ivec2 res) {
 }
 
 void window_destroy(struct window* window) {
+  glfwDestroyWindow(window->private->window);
   HEAP_FREE(window->private);
   HEAP_FREE(window);
 }
 
-void window_poll(struct window* window) {}
+void window_poll(struct window* window) { glfwPollEvents(); }

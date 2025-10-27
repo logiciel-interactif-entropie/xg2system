@@ -26,6 +26,7 @@ void resources_init() {
 }
 
 static void __p_resource_foreach(gpointer data, gpointer userdata) {
+  if (__resource_manager->num_resources_tick == 0) return;
   struct resource* resource = (struct resource*)data;
 
   if (fs_exists(resource->resource_name)) {
@@ -48,7 +49,6 @@ static void __p_resource_foreach(gpointer data, gpointer userdata) {
 
   g_ptr_array_add(__resource_manager->resources_to_unpend, data);
   __resource_manager->num_resources_tick--;
-  if (__resource_manager->num_resources_tick == 0) return;
 }
 
 static void __up_resource_foreach(gpointer data, gpointer userdata) {

@@ -57,9 +57,10 @@ cglm = dependency('cglm', required: true)
 glfw = dependency('glfw3', required: true)
 assimp = dependency('assimp', required: true)
 
+
 cpp = meson.get_compiler('cpp')
 
-engine_deps = [glib, flecs, bgfx, cglm, cpp.find_library('bx'), cpp.find_library('bimg'), glfw]
+engine_deps = [glib, flecs, bgfx, cglm, cpp.find_library('bx'), cpp.find_library('bimg'), glfw, assimp]
 
 shaderc = find_program('shaderc', required: true)
 

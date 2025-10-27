@@ -39,6 +39,8 @@ void fs_init() {
 #ifndef NDEBUG
   struct fs_system* system2 = fs_add_literal_subdir("../assets");
   system2->uri = "assets";
+  struct fs_system* shaders = fs_add_literal_subdir("../shaders");
+  shaders->uri = "shaders";
 #endif
 }
 
@@ -99,6 +101,8 @@ struct fs_system* fs_add_literal_subdir(const char* system_path) {
   fs_add_system(&fs->base);
 
   LOG(ll_debug, "mounted literal path %s", system_path);
+
+  return &fs->base;
 }
 
 void fs_destroy() { g_array_free(__fs_system_mgr->fsystems, true); }
@@ -145,6 +149,7 @@ struct file* fs_open(const char* path, const char* mode) {
     char uri_cpy[64];
     strncpy(uri_cpy, path, uri_len);
     fs = get_fs_by_uri(uri_cpy);
+    path += uri_len + 3;
     if (!fs) goto failure;
   } else {
     fs = get_fs_by_path(path);
@@ -226,4 +231,7 @@ int fs_flush(struct file* hnd) {
   return hnd->fs->flush(hnd->fs, hnd->hnd);
 }
 
-void fs_close(struct file* hnd) { hnd->fs->close(hnd->fs, hnd->hnd); }
+void fs_close(struct file* hnd) {
+  hnd->fs->close(hnd->fs, hnd->hnd);
+  HEAP_FREE(hnd);
+}

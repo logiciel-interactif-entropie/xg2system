@@ -14,7 +14,7 @@
 ECS_COMPONENT_DECLARE(shader_t);
 
 static void __shader_free(ecs_iter_t* it) {
-  shader_t* shader = ecs_field(it, shader_t, it);
+  shader_t* shader = ecs_field(it, shader_t, 0);
   resource_unref(shader->shader);
 }
 
@@ -82,6 +82,9 @@ static void __shader_program_graphics_ready(struct resource* resource) {
           bgfx_copy(fragment_shader_string, fragment_shader_len));
       shader_program_resource->program =
           bgfx_create_program(vertex, fragment, true);
+
+      HEAP_FREE(vertex_shader_string);
+      HEAP_FREE(fragment_shader_string);
     } break;
     case unknown:
     default:

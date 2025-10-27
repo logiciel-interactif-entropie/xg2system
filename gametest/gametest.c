@@ -11,24 +11,24 @@
 #include "graphics/shader_program.h"
 
 static const char* __get_module_name() { return "gametest"; }
-
 static const char* __get_module_copyright_long() { return "Public Domain"; }
-
 static const char* __get_module_copyright_short() { return "Public Domain"; }
 
 static void __runtime_create_hook(struct runtime* runtime) {
   ecs_set_name_prefix(runtime->ecs, "GameTest");
 
-  ecs_entity_t camera =
-      ecs_insert(runtime->ecs,
-                 ecs_value(camera_lookat_t, {.eye = {10.f, 10.f, 10.f},
-                                             .target = {0.f, 0.f, 0.f},
-                                             .up = {0.f, 0.f, 1.0f}}),
-                 ecs_value(camera_t, {.dirty = true, .fov = 60.f}));
+  ecs_entity_t camera = ecs_insert(
+      runtime->ecs,
+      ecs_value(camera_lookat_t, {.eye = {5.f, 5.f, 0.f},
+                                  .target = {0.f, 0.f, 0.f},
+                                  .up = {0.f, 0.f, 1.0f}}),
+      ecs_value(camera_t, {.fov = 40.f}),
+      ecs_value(camera_lookat_spin_t,
+                {.distance = 2.f, .center = {0.f, 0.f, 0.f}, .time = 0.f}));
+  ecs_add_id(runtime->ecs, camera, debug_t);
 
-  struct resource* texture_test = resource_create("test.ktx", rsc_image);
   struct resource* shader_test =
-      resource_create("../shaders/example.cfg", rsc_shader_program);
+      resource_create("shaders://example.cfg", rsc_shader_program);
   struct resource* model_test = resource_create("test.obj", rsc_model);
 
   ecs_entity_t entity =

@@ -9,8 +9,6 @@ struct runtime;
 typedef struct {
   float fov;
 
-  bool dirty;
-
   mat4 projection;
 } camera_t;
 
@@ -20,7 +18,14 @@ typedef struct {
   vec3 up;
 } camera_lookat_t;
 
+typedef struct {
+  vec3 center;
+  float distance;
+  float time;
+} camera_lookat_spin_t;
+
 extern ECS_COMPONENT_DECLARE(camera_t);
 extern ECS_COMPONENT_DECLARE(camera_lookat_t);
+extern ECS_COMPONENT_DECLARE(camera_lookat_spin_t);
 
 void runtime_register_camera(struct runtime* runtime);

@@ -10,6 +10,7 @@
 #include "config.h"
 #include "core/debug.h"
 #include "core/fs.h"
+#include "core/mem.h"
 #include "core/module_api.h"
 #include "engine/module.h"
 #include "engine/resource.h"
@@ -25,8 +26,17 @@ static struct argp_option options[] = {
 #else
     {"game", 'g', "libgame.so", 0, "Game module"},
 #endif
+#ifndef NDEBUG
+    {"debug_bgfx", 'D', 0, 0, "BGFX debug"},
+#endif
+    {"profiler_bgfx", 'p', 0, 0, "BGFX profiler"},
+    {"wireframe_mode", 'W', 0, 0, "BGFX wireframe mode"},
     {0},
 };
+
+extern bool __bgfx_debug_mode;
+extern bool __bgfx_profiler_mode;
+extern bool __bgfx_wireframe_mode;
 
 struct arguments {
   const char* game_module;
@@ -37,6 +47,15 @@ static error_t parse_opt(int key, char* arg, struct argp_state* state) {
   switch (key) {
     case 'g':
       arguments->game_module = arg;
+      break;
+    case 'D':
+      __bgfx_debug_mode = true;
+      break;
+    case 'p':
+      __bgfx_profiler_mode = true;
+      break;
+    case 'W':
+      __bgfx_wireframe_mode = true;
       break;
     case ARGP_KEY_ARG:
       return 0;
@@ -50,6 +69,8 @@ static struct argp argp = {
 };
 
 int main(int argc, char** argv) {
+  heap_init();
+
   struct arguments arguments;
   arguments.game_module = NULL;
   argp_parse(&argp, argc, argv, 0, 0, &arguments);
@@ -86,12 +107,16 @@ int main(int argc, char** argv) {
 
   LOG(ll_debug, "Exiting gracefully");
 
-  runtime_destroy(runtime);
+  runtime_deinit(runtime);
 
   resources_destroy_graphics();
   resources_destroy();
 
+  runtime_destroy(runtime);
+
   fs_destroy();
+
+  heap_end();
 
   return EXIT_SUCCESS;
 }

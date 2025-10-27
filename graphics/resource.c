@@ -20,19 +20,19 @@ void resources_init_graphics() {
   __resource_manager = HEAP_ALLOC_TYPE(struct __resource_manager);
   __resource_manager->pending_resources = g_ptr_array_new();
 
-  rsc_missing_texture = resource_create("engine/missingtexture.dds", rsc_image);
+  rsc_missing_texture =
+      resource_create("assets://engine/missingtexture.dds", rsc_image);
 }
 
 static void __p_resource_foreach(gpointer data, gpointer userdata) {
+  if (__resource_manager->num_resources_tick == 0) return;
   struct resource* resource = (struct resource*)data;
   struct graphics_resource* graphics_resource = resource_get_graphics(resource);
-  if (graphics_resource->on_graphics_ready)
-    graphics_resource->on_graphics_ready(resource);
+  graphics_resource->on_graphics_ready(resource);
   LOG(ll_debug, "Graphics loaded %s", resource->resource_name);
   graphics_resource->needs_graphics_upload = false;
   g_ptr_array_add(__resource_manager->resources_to_unpend, data);
   __resource_manager->num_resources_tick--;
-  if (__resource_manager->num_resources_tick == 0) return;
 }
 
 static void __up_resource_foreach(gpointer data, gpointer userdata) {
@@ -50,6 +50,7 @@ void resources_tick_graphics() {
 }
 
 void resources_destroy_graphics() {
+  resource_unref(rsc_missing_texture);
   g_ptr_array_free(__resource_manager->pending_resources, true);
   HEAP_FREE(__resource_manager);
 }
@@ -82,13 +83,12 @@ void resource_init_graphics(struct resource* resource) {
         resource->resource_name);
   resource->resource_user_data =
       (void*)HEAP_ALLOC_TYPE(struct graphics_resource);
+  resource->free_data = __graphics_resource_free;
   resource->on_data_ready = __on_resource_data_ready;
-
   struct graphics_resource* graphics_resource = resource_get_graphics(resource);
   graphics_resource->needs_graphics_upload = false;
   graphics_resource->on_graphics_ready = NULL;
   graphics_resource->userdata = NULL;
-  graphics_resource->free_data = __graphics_resource_free;
 }
 
 struct graphics_resource* resource_get_graphics(struct resource* resource) {
