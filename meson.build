@@ -30,6 +30,8 @@ graphics_srcs = [
   'graphics/camera.h',
   'graphics/image.c',
   'graphics/image.h',
+  'graphics/infinite_plane.c',
+  'graphics/infinite_plane.h',
   'graphics/model.c',
   'graphics/model.h',
   'graphics/renderer.c',
@@ -66,7 +68,7 @@ engine_deps = [glib, flecs, bgfx, cglm, cpp.find_library('bx'), cpp.find_library
 
 shaderc = find_program('shaderc', required: true)
 
-glsl_gen_args = ['-p', '150']
+glsl_gen_args = ['-p', 'spirv']
 gen_vs = generator(shaderc,
                 output: '@BASENAME@.vs.bin',
                 arguments: ['-f', '@INPUT@', '-o', '@OUTPUT@', '--type', 'vertex', glsl_gen_args])

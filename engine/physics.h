@@ -12,6 +12,8 @@ typedef struct {
   dSpaceID space;
   dJointGroupID contact_group;
 
+  dGeomID infinte_plane;
+
   float last_delta;
 } physics_world_t;
 

@@ -37,3 +37,4 @@ void resource_delete(struct resource* resource);
 void resource_destroy(struct resource* resource);
 struct resource* resource_get(const char* resource);
 void resource_unref(struct resource* resource);
+struct resource* resource_ref(struct resource* resource);

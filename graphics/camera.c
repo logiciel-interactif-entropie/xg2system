@@ -82,10 +82,13 @@ static void __camera_debug_controller(ecs_iter_t* it) {
     window->mouse_lock_requested = true;
 
     vec2 delta;
-    glm_vec2_sub(_controller->last_mouse, window->mouse_position, delta);
-    glm_vec2_scale(delta, _controller->mouse_sensitivity * it->delta_time,
-                   delta);
-    glm_vec2_add(delta, _controller->angles, _controller->angles);
+    glm_vec2_zero(delta);
+    if (window->mouse_locked) {
+      glm_vec2_sub(_controller->last_mouse, window->mouse_position, delta);
+      glm_vec2_scale(delta, _controller->mouse_sensitivity * it->delta_time,
+                     delta);
+      glm_vec2_add(delta, _controller->angles, _controller->angles);
+    }
 
     vec3 angles_xyz;
     angles_xyz[0] = 0.f;
@@ -96,10 +99,12 @@ static void __camera_debug_controller(ecs_iter_t* it) {
 
     vec4 velocity;
     glm_vec4_zero(velocity);
-    velocity[0] = (window->keys_down[GLFW_KEY_W] ? 1.0f : 0.0f) +
-                  (window->keys_down[GLFW_KEY_S] ? -1.0f : 0.0f);
-    velocity[1] = (window->keys_down[GLFW_KEY_A] ? 1.0f : 0.0f) +
-                  (window->keys_down[GLFW_KEY_D] ? -1.0f : 0.0f);
+    if (window->mouse_locked) {
+      velocity[0] = (window->keys_down[GLFW_KEY_W] ? 1.0f : 0.0f) +
+                    (window->keys_down[GLFW_KEY_S] ? -1.0f : 0.0f);
+      velocity[1] = (window->keys_down[GLFW_KEY_A] ? 1.0f : 0.0f) +
+                    (window->keys_down[GLFW_KEY_D] ? -1.0f : 0.0f);
+    }
     glm_mat4_mulv(vm, velocity, velocity);
 
     vec3 velocity3;

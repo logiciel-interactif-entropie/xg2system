@@ -7,6 +7,7 @@
 #include "engine/physics.h"
 #include "engine/resource.h"
 #include "flecs.h"
+#include "graphics/infinite_plane.h"
 #include "graphics/model.h"
 #include "graphics/shader_program.h"
 #include "graphics/window.h"
@@ -30,6 +31,8 @@ struct runtime* runtime_create() {
   runtime_register_camera(runtime);
   runtime_register_shader(runtime);
   runtime_register_model(runtime);
+
+  runtime_register_infinite_plane(runtime);
 
   runtime_register_debug(runtime);
 

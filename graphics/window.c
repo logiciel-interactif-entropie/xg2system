@@ -30,9 +30,19 @@ static void __window_close_handler(GLFWwindow* window) {
 static void __window_key_event(GLFWwindow* window, int key, int scancode,
                                int action, int mods) {
   struct window* win_host = (struct window*)glfwGetWindowUserPointer(window);
+  static bool debounce = false;
   if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
     win_host->quit_requested = true;
-  else
+  else if (key == GLFW_KEY_TAB) {
+    if (action == GLFW_PRESS) {
+      if (!debounce) {
+        debounce = true;
+        win_host->user_allows_mouse_lock = !win_host->user_allows_mouse_lock;
+      }
+    } else if (action == GLFW_RELEASE) {
+      debounce = false;
+    }
+  } else
     win_host->keys_down[key] =
         (action == GLFW_PRESS || action == GLFW_REPEAT) ? true : false;
 }
@@ -73,6 +83,8 @@ struct window* window_create() {
 
   window->quit_requested = false;
   window->mouse_lock_requested = false;
+  window->user_allows_mouse_lock = true;
+  window->mouse_locked = false;
 
   signal(SIGINT, __sighandler);
 
@@ -99,8 +111,15 @@ void window_destroy(struct window* window) {
 
 void window_poll(struct window* window) {
   glfwPollEvents();
-  if (window->mouse_lock_requested) {
+
+  int focused = glfwGetWindowAttrib(window->private->window, GLFW_FOCUSED);
+  window->mouse_locked = (window->mouse_lock_requested &&
+                          window->user_allows_mouse_lock && focused);
+
+  if (window->mouse_locked) {
     glfwSetInputMode(window->private->window, GLFW_CURSOR,
                      GLFW_CURSOR_DISABLED);
+  } else {
+    glfwSetInputMode(window->private->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
   }
 }

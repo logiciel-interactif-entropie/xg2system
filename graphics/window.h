@@ -9,6 +9,8 @@ struct window {
   struct window_private* private;
   bool quit_requested;
   bool mouse_lock_requested;
+  bool user_allows_mouse_lock;
+  bool mouse_locked;
 
   vec2 mouse_position;
   bool keys_down[GLFW_KEY_LAST + 1];

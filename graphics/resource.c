@@ -61,7 +61,8 @@ static void __on_resource_data_ready(struct resource* resource, void* data,
   graphics_resource->needs_graphics_upload = true;
   graphics_resource->loaded_graphics_data =
       HEAP_ALLOC_TYPE(struct loaded_graphics_data);
-  graphics_resource->loaded_graphics_data->data = HEAP_ALLOC(data_size);
+  graphics_resource->loaded_graphics_data->data =
+      HEAP_ALLOC_NAMED(data_size, resource->resource_name);
   graphics_resource->loaded_graphics_data->size = data_size;
   memcpy(graphics_resource->loaded_graphics_data->data, data, data_size);
   g_ptr_array_add(__resource_manager->pending_resources, resource);

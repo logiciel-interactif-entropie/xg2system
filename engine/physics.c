@@ -79,14 +79,17 @@ static void __object_update(ecs_iter_t* it) {
 static void __world_near_callback(void* data, dGeomID o1, dGeomID o2) {
   physics_world_t* world = (physics_world_t*)data;
 
+  bool is_against_infinite_plane =
+      (o1 == world->infinte_plane) || (o2 == world->infinte_plane);
+
   dBodyID b1 = dGeomGetBody(o1);
   dBodyID b2 = dGeomGetBody(o2);
   dContact contact[1000];
   for (int i = 0; i < 1000; i++) {
-    contact[i].surface.mode = dContactBounce | dContactSoftCFM;
+    contact[i].surface.mode = is_against_infinite_plane ? 0 : dContactBounce;
     contact[i].surface.mu = dInfinity;
     contact[i].surface.mu2 = 0;
-    contact[i].surface.bounce = 0.001;
+    contact[i].surface.bounce = is_against_infinite_plane ? 0.0 : 1.0;
     contact[i].surface.bounce_vel = 0.1;
     contact[i].surface.soft_cfm = 0.01;
   }
@@ -117,7 +120,6 @@ static void __init_p_box(ecs_iter_t* it) {
   physics_world_t* world = __get_world_from_it(it);
   physics_object_t* _object = ecs_field(it, physics_object_t, 0);
   physics_object_box_t* _box = ecs_field(it, physics_object_box_t, 1);
-  transform3d_t* transform = ecs_field(it, transform3d_t, 2);
 
   for (int i = 0; i < it->count; i++) {
     physics_object_t* object = &_object[i];
@@ -140,7 +142,30 @@ static void __init_p_box(ecs_iter_t* it) {
   }
 }
 
-static void __init_p_sphere() {}
+static void __init_p_sphere(ecs_iter_t* it) {
+  physics_world_t* world = __get_world_from_it(it);
+  physics_object_t* _object = ecs_field(it, physics_object_t, 0);
+  physics_object_sphere_t* _sphere = ecs_field(it, physics_object_sphere_t, 1);
+
+  for (int i = 0; i < it->count; i++) {
+    physics_object_t* object = &_object[i];
+    physics_object_sphere_t* sphere = &_sphere[i];
+
+    if (!object->body) {
+      object->body = dBodyCreate(world->world);
+      dBodySetData(object->body, (void*)it->ids[i]);
+
+      dMass m;
+      dMassSetSphere(&m, object->mass, sphere->radius);
+      dBodySetMass(object->body, &m);
+
+      object->geom = dCreateSphere(world->space, sphere->radius);
+
+      dGeomSetBody(object->geom, object->body);
+      dGeomSetData(object->geom, (void*)it->ids[i]);
+    }
+  }
+}
 
 ECS_CTOR(physics_world_t, world, {
   dInitODE2(0);
@@ -149,7 +174,7 @@ ECS_CTOR(physics_world_t, world, {
   world->space = dSimpleSpaceCreate(0);
   world->contact_group = dJointGroupCreate(0);
 
-  dCreatePlane(world->space, 0, 0, 1, -100);
+  world->infinte_plane = dCreatePlane(world->space, 0, 0, 1, -100);
 
   dWorldSetAutoDisableFlag(world->world, 1);
   dWorldSetContactSurfaceLayer(world->world, 0.001);
@@ -171,7 +196,9 @@ void runtime_register_physics(struct runtime* runtime) {
   ECS_SYSTEM(runtime->ecs, __object_update, EcsOnUpdate, physics_object_t,
              transform3d_t);
   ECS_SYSTEM(runtime->ecs, __init_p_box, EcsPreUpdate, physics_object_t,
-             physics_object_box_t, transform3d_t);
+             physics_object_box_t);
+  ECS_SYSTEM(runtime->ecs, __init_p_sphere, EcsPreUpdate, physics_object_t,
+             physics_object_sphere_t);
 
   ecs_set_hooks(runtime->ecs, physics_world_t,
                 {.ctor = ecs_ctor(physics_world_t)});

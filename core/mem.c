@@ -14,7 +14,7 @@
 #ifndef XG2S_DISABLE_HEAP_TRACKING
 struct __attribute__((packed)) allocation {
   void* ptr;
-  const char* name;
+  char name[64];
 #ifndef NDEBUG
   const char* file;
   int line;
@@ -123,7 +123,7 @@ void* __heap_manipulate(void* old, size_t t, const char* name) {
           MAX(heap_manager->max_memory_used, heap_manager->memory_usage);
       allocation->current_size = t;
       allocation->ptr = np;
-      allocation->name = name;
+      strncpy(allocation->name, name, sizeof(allocation->name));
 #endif
       return np;
     } else {
@@ -152,7 +152,7 @@ void* __heap_manipulate(void* old, size_t t, const char* name) {
     g_hash_table_insert(heap_manager->allocations, np, allocation);
     allocation->ptr = np;
     allocation->current_size = t;
-    allocation->name = name;
+    strncpy(allocation->name, name, sizeof(allocation->name));
 #ifndef NDEBUG
     allocation->line = line;
     allocation->file = file;

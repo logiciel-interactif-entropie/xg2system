@@ -80,6 +80,11 @@ void resources_destroy() {
 
 struct resource* resource_create(const char* resource,
                                  enum resource_type type) {
+  struct resource* old_resource = resource_get(resource);
+  if (old_resource) {
+    return old_resource;
+  }
+
   struct resource* new_resource = HEAP_ALLOC_TYPE(struct resource);
   strncpy(new_resource->resource_name, resource,
           sizeof(new_resource->resource_name));
@@ -132,6 +137,7 @@ void resource_destroy(struct resource* resource) {
 struct resource* resource_get(const char* resource) {
   struct resource* rsc = (struct resource*)g_hash_table_lookup(
       __resource_manager->resource_table, (gpointer)resource);
+  if (!rsc) return NULL;
   rsc->references++;
   return rsc;
 }
@@ -141,4 +147,9 @@ void resource_unref(struct resource* resource) {
   if (!resource->references) {  // no more references
     resource_destroy(resource);
   }
+}
+
+struct resource* resource_ref(struct resource* resource) {
+  resource->references++;
+  return resource;
 }

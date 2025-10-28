@@ -16,6 +16,7 @@ void heap_dump();
 #ifndef NDEBUG
 #define HEAP_ALLOC(S) \
   __heap_manipulate(NULL, S, "heap-alloc", __FILE__, __LINE__)
+#define HEAP_ALLOC_NAMED(S, N) __heap_manipulate(NULL, S, N, __FILE__, __LINE__)
 #define HEAP_ALLOC_TYPE(T) \
   (T*)__heap_manipulate(NULL, sizeof(T), #T, __FILE__, __LINE__)
 #define HEAP_ALLOC_ARRAY(T, C) \
@@ -23,6 +24,7 @@ void heap_dump();
 #define HEAP_FREE(P) __heap_manipulate(P, 0, NULL, __FILE__, __LINE__)
 #else
 #define HEAP_ALLOC(S) __heap_manipulate(NULL, S, "heap-alloc")
+#define HEAP_ALLOC_NAMED(S, N) __heap_manipulate(NULL, S, N)
 #define HEAP_ALLOC_TYPE(T) (T*)__heap_manipulate(NULL, sizeof(T), #T)
 #define HEAP_ALLOC_ARRAY(T, C) \
   (T*)__heap_manipulate(NULL, sizeof(T) * C, #T " array")
